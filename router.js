@@ -3,7 +3,7 @@ var User = require("./models/user");
 var md5 = require("blueimp-md5");
 var router = express.Router();
 
-router.get("/", function(req, res) {
+router.get("/", function(req, res, next) {
 	var user = req.session.user;
 	//console.log(user)
 	res.render("index.html", {
@@ -11,11 +11,11 @@ router.get("/", function(req, res) {
 	});
 })
 
-router.get("/login", function(req, res) {
+router.get("/login", function(req, res, next) {
 	res.render("login.html");
 })
 
-router.post("/login", function(req, res) {
+router.post("/login", function(req, res, next) {
 	//1.获取数据
 	//2.查询数据库，用户名密码是否正确
 	//3.发送响应数据
@@ -25,10 +25,7 @@ router.post("/login", function(req, res) {
 		password: md5(md5(body.password))
 	}, function(err, user) {
 		if(err) {
-			return res.status(500).json({
-				err_code: 500,
-				message: err.message
-			})
+			return next(err);
 		}
 		if(!user) {
 			return res.status(200).json({
@@ -37,19 +34,19 @@ router.post("/login", function(req, res) {
 			})
 		}
 		//记录session
-		req.session.user=user;
+		req.session.user = user;
 		return res.status(200).json({
-			err_code:0,
+			err_code: 0,
 			message: "ok"
 		})
 	})
 })
 
-router.get("/register", function(req, res) {
+router.get("/register", function(req, res, next) {
 	res.render("register.html");
 })
 
-router.post("/register", function(req, res) {
+router.post("/register", function(req, res, next) {
 	//1.获取表单提交数据
 	//	req.body
 	//2.操作数据库
@@ -71,10 +68,7 @@ router.post("/register", function(req, res) {
 		]
 	}, function(err, data) {
 		if(err) {
-			return res.status(500).json({
-				err_code: 500,
-				message: '服务端错误'
-			})
+			return next(err);
 		}
 		if(data) {
 			return res.status(200).json({
@@ -85,10 +79,7 @@ router.post("/register", function(req, res) {
 		body.password = md5(md5(body.password));
 		new User(body).save(function(err, user) {
 			if(err) {
-				return res.status(500).json({
-					err_code: 500,
-					message: '服务端错误'
-				})
+				return next(err);
 			}
 			req.session.user = user;
 			return res.status(200).json({
@@ -99,10 +90,10 @@ router.post("/register", function(req, res) {
 	})
 })
 
-router.get("/logout",function(req,res){
+router.get("/logout", function(req, res, next) {
 	//清除登录状态
 	//重定向登录页
-	req.session.user=null;
+	req.session.user = null;
 	res.redirect("/login");
 })
 
